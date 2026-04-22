@@ -1,0 +1,24 @@
+name: 'OpenAI PR Reviewer'
+description: 'Review PRs with OpenAI and comment inline'
+author: 'Nirmal Rajput'
+inputs:
+  github-token:
+    description: 'GitHub token for API access'
+    required: true
+  openai-api-key:
+    description: 'OpenAI API key'
+    required: true
+  model:
+    description: 'OpenAI model to use'
+    required: false
+    default: 'gpt-4'
+  max-files:
+    description: 'Maximum files to review'
+    required: false
+    default: '10'
+runs:
+  using: 'node20'
+  main: 'src/index.js'
+branding:
+  icon: 'check-circle'
+  color: 'green'
