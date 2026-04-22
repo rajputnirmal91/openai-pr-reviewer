@@ -17,8 +17,19 @@ inputs:
     required: false
     default: '10'
 runs:
-  using: 'node20'
-  main: 'src/index.js'
+  using: 'composite'
+  steps:
+    - run: npm install
+      shell: bash
+      working-directory: ${{ github.action_path }}
+    - run: node src/index.js
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      env:
+        INPUT_GITHUB_TOKEN: ${{ inputs.github-token }}
+        INPUT_OPENAI_API_KEY: ${{ inputs.openai-api-key }}
+        INPUT_MODEL: ${{ inputs.model }}
+        INPUT_MAX_FILES: ${{ inputs.max-files }}
 branding:
   icon: 'check-circle'
   color: 'green'
