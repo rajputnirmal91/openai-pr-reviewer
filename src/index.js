@@ -4,10 +4,21 @@ const { OpenAI } = require('openai');
 
 async function run() {
   try {
-    const token = core.getInput('github-token');
-    const openaiKey = core.getInput('openai-api-key');
-    const model = core.getInput('model');
-    const maxFiles = parseInt(core.getInput('max-files')) || 10;
+    // Read from environment variables (set by action.yml)
+    const token = process.env.INPUT_GITHUB_TOKEN;
+    const openaiKey = process.env.INPUT_OPENAI_API_KEY;
+    const model = process.env.INPUT_MODEL || 'gpt-4';
+    const maxFiles = parseInt(process.env.INPUT_MAX_FILES) || 10;
+    
+    // Validate required inputs
+    if (!token) {
+      throw new Error('github-token is required');
+    }
+    if (!openaiKey) {
+      throw new Error('openai-api-key is required');
+    }
+    
+    core.info(`Using model: ${model}, max files: ${maxFiles}`);
     
     const octokit = github.getOctokit(token);
     const openai = new OpenAI({ apiKey: openaiKey });
@@ -74,7 +85,7 @@ async function reviewCode(openai, patch, filename, model) {
       messages: [
         {
           role: 'system',
-          content: 'You are an expert code reviewer. Review the provided code diff and identify issues, improvements, and best practices. Respond with JSON: { "comments": [{ "line": <number>, "text": "<review>" }] }',
+          content: 'You are an expert code reviewer. Review the provided code diff and identify issues, improvements, and best practices. Respond with JSON: { "comments": [{ "line": <number>, "text": "<comment>" }] }',
         },
         {
           role: 'user',
