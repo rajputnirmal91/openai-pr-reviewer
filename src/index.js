@@ -7,7 +7,7 @@ async function run() {
   try {
     // Inputs from GitHub Action
     const token = process.env.INPUT_GITHUB_TOKEN;
-    const geminiKey = process.env.INPUT_OPENAI_API_KEY;
+    const aiKey = process.env.INPUT_AI_API_KEY;
     const modelName = process.env.INPUT_MODEL || 'gemini-1.5-flash';
     const maxFiles = parseInt(process.env.INPUT_MAX_FILES) || 10;
 
@@ -15,7 +15,7 @@ async function run() {
     if (!token) {
       throw new Error('github-token is required');
     }
-    if (!geminiKey) {
+    if (!aiKey) {
       throw new Error('gemini-api-key is required');
     }
 
@@ -24,7 +24,7 @@ async function run() {
     const octokit = github.getOctokit(token);
 
     // Gemini setup
-    const genAI = new GoogleGenerativeAI(geminiKey);
+    const genAI = new GoogleGenerativeAI(aiKey);
     const model = genAI.getGenerativeModel({ model: modelName });
 
     const { context } = github;
