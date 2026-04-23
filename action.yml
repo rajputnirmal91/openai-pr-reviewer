@@ -11,7 +11,7 @@ inputs:
   model:
     description: 'OpenAI model to use'
     required: false
-    default: 'gemini-1.5-flash'
+    default: 'gemini-2.5-flash'
   max-files:
     description: 'Maximum files to review'
     required: false
