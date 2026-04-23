@@ -5,14 +5,18 @@ function buildReviewPrompt(filename, patch) {
 
   return `You are a senior full-stack engineer performing a strict production-level code review.
 
-Analyze the following Git diff and return ONLY valid JSON in the exact format below:
+CONTEXT:
+- File: ${filename}
+- Review Type: Git diff analysis
+- Goal: Identify bugs, security issues, performance problems, and maintainability concerns
 
+RESPONSE FORMAT (STRICT JSON ONLY):
 ${JSON.stringify(responseFormat.schema, null, 2)}
 
-Rules:
+RULES:
 ${rules.map(rule => `- ${rule}`).join('\n')}
 
-Review Guidelines:
+REVIEW GUIDELINES:
 
 Bugs & Logic Errors:
 ${reviewGuidelines.bugsAndLogicErrors.map(item => `- ${item}`).join('\n')}
@@ -32,14 +36,15 @@ ${reviewGuidelines.architectureAndScalability.map(item => `- ${item}`).join('\n'
 React Best Practices (if applicable):
 ${reviewGuidelines.reactBestPractices.map(item => `- ${item}`).join('\n')}
 
-Commenting Rules:
+SEVERITY LEVELS:
 - critical: ${commentingRules.critical}
 - warning: ${commentingRules.warning}
 - suggestion: ${commentingRules.suggestion}
+
+COMMENTING GUIDELINES:
 ${commentingRules.guidelines.map(guideline => `- ${guideline}`).join('\n')}
 
-File: ${filename}
-Diff:
+DIFF TO REVIEW:
 ${patch}`;
 }
 
