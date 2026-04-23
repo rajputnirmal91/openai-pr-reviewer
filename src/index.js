@@ -1,101 +1,122 @@
 const core = require('@actions/core');
 const github = require('@actions/github');
-const { OpenAI } = require('openai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 async function run() {
   try {
-    // Read from environment variables (set by action.yml)
+    // Inputs from GitHub Action
     const token = process.env.INPUT_GITHUB_TOKEN;
-    const openaiKey = process.env.INPUT_OPENAI_API_KEY;
-    const model = process.env.INPUT_MODEL || 'gpt-4';
+    const geminiKey = process.env.INPUT_OPENAI_API_KEY;
+    const modelName = process.env.INPUT_MODEL || 'gemini-1.5-flash';
     const maxFiles = parseInt(process.env.INPUT_MAX_FILES) || 10;
-    
-    // Validate required inputs
+
+    // Validate inputs
     if (!token) {
       throw new Error('github-token is required');
     }
-    if (!openaiKey) {
-      throw new Error('openai-api-key is required');
+    if (!geminiKey) {
+      throw new Error('gemini-api-key is required');
     }
-    
-    core.info(`Using model: ${model}, max files: ${maxFiles}`);
-    
+
+    core.info(`Using model: ${modelName}, max files: ${maxFiles}`);
+
     const octokit = github.getOctokit(token);
-    const openai = new OpenAI({ apiKey: openaiKey });
-    
+
+    // Gemini setup
+    const genAI = new GoogleGenerativeAI(geminiKey);
+    const model = genAI.getGenerativeModel({ model: modelName });
+
     const { context } = github;
-    
+
     if (context.eventName !== 'pull_request') {
       core.info('Not a pull request event, skipping');
       return;
     }
-    
+
     const pr = context.payload.pull_request;
     const owner = context.repo.owner;
     const repo = context.repo.repo;
     const prNumber = pr.number;
-    
+
     core.info(`Reviewing PR #${prNumber}`);
-    
+
     const { data: files } = await octokit.rest.pulls.listFiles({
       owner,
       repo,
       pull_number: prNumber,
     });
-    
+
     if (files.length > maxFiles) {
       core.warning(`Too many files (${files.length}), reviewing only ${maxFiles}`);
     }
-    
+
     for (const file of files.slice(0, maxFiles)) {
-      if (file.patch) {
-        const review = await reviewCode(openai, file.patch, file.filename, model);
-        
-        if (review.comments && review.comments.length > 0) {
-          for (const comment of review.comments) {
-            await octokit.rest.pulls.createReview({
-              owner,
-              repo,
-              pull_number: prNumber,
-              event: 'COMMENT',
-              comments: [
-                {
-                  path: file.filename,
-                  line: comment.line || 1,
-                  body: comment.text,
-                },
-              ],
-            });
-            await new Promise(resolve => setTimeout(resolve, 1000));
-          }
+      if (!file.patch) continue;
+
+      const review = await reviewCode(model, file.patch, file.filename);
+
+      if (review.comments && review.comments.length > 0) {
+        for (const comment of review.comments) {
+          await octokit.rest.pulls.createReview({
+            owner,
+            repo,
+            pull_number: prNumber,
+            event: 'COMMENT',
+            comments: [
+              {
+                path: file.filename,
+                line: comment.line || 1,
+                body: comment.text,
+              },
+            ],
+          });
+
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
       }
     }
-    
+
     core.info('PR review completed');
   } catch (error) {
     core.setFailed(error.message);
   }
 }
 
-async function reviewCode(openai, patch, filename, model) {
+async function reviewCode(model, patch, filename) {
   try {
-    const message = await openai.chat.completions.create({
-      model,
-      messages: [
-        {
-          role: 'system',
-          content: 'You are an expert code reviewer. Review the provided code diff and identify issues, improvements, and best practices. Respond with JSON: { "comments": [{ "line": <number>, "text": "<comment>" }] }',
-        },
-        {
-          role: 'user',
-          content: `Review this code change in file ${filename}:\n\n${patch}`,
-        },
-      ],
-    });
-    
-    const content = message.choices[0].message.content;
-    return JSON.parse(content);
+    const prompt = `
+You are an expert code reviewer.
+
+Analyze the following code diff and return ONLY valid JSON:
+
+{
+  "comments": [
+    { "line": number, "text": "clear and helpful review comment" }
+  ]
+}
+
+Rules:
+- Only respond in JSON
+- No markdown
+- Focus on bugs, improvements, security, readability
+
+File: ${filename}
+
+Diff:
+${patch}
+`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    let text = response.text();
+
+    // Clean possible markdown wrappers
+    text = text
+      .replace(/```json/g, '')
+      .replace(/```/g, '')
+      .trim();
+
+    return JSON.parse(text);
   } catch (error) {
     core.warning(`Failed to review code: ${error.message}`);
     return { comments: [] };
