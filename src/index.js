@@ -85,7 +85,27 @@ async function run() {
 
 async function reviewCode(model, patch, filename) {
   try {
-    const prompt = buildReviewPrompt(filename, patch);
+    const prompt = `
+You are an expert code reviewer.
+
+Analyze the following code diff and return ONLY valid JSON:
+
+{
+  "comments": [
+    { "line": number, "text": "clear and helpful review comment" }
+  ]
+}
+
+Rules:
+- Only respond in JSON
+- No markdown
+- Focus on bugs, improvements, security, readability
+
+File: ${filename}
+
+Diff:
+${patch}
+`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
