@@ -85,27 +85,79 @@ async function run() {
 
 async function reviewCode(model, patch, filename) {
   try {
-    const prompt = `
-You are an expert code reviewer.
+    const prompt = `You are a senior full-stack engineer performing a strict production-level code review.
 
-Analyze the following code diff and return ONLY valid JSON:
+Analyze the following Git diff and return ONLY valid JSON in the exact format below:
 
 {
-  "comments": [
-    { "line": number, "text": "clear and helpful review comment" }
-  ]
+"comments": [
+{ "line": number, "severity": "critical | warning | suggestion", "category": "bug | performance | security | readability | architecture | best_practice", "text": "clear, specific, and actionable review comment" }
+]
 }
 
 Rules:
-- Only respond in JSON
-- No markdown
-- Focus on bugs, improvements, security, readability
+
+* ONLY return valid JSON (no markdown, no explanations outside JSON)
+* Do NOT include any text before or after JSON
+* Each comment must be precise and actionable
+* Do NOT repeat similar comments
+* If no issues, return: { "comments": [] }
+
+Review Guidelines:
+
+1. Bugs & Logic Errors
+
+* Incorrect logic, broken conditions, missing dependencies
+* React hook misuse (useEffect, useMemo, useCallback issues)
+
+2. React Best Practices
+
+* Unnecessary re-renders
+* Missing keys in lists
+* Improper state management
+* Anti-patterns in component design
+
+3. Performance
+
+* Expensive computations inside render
+* Missing memoization where needed
+* Inefficient rendering patterns
+
+4. Security
+
+* XSS risks (dangerouslySetInnerHTML, unsafe inputs)
+* Exposure of sensitive data
+* Unsafe API usage
+
+5. Readability & Maintainability
+
+* Poor naming
+* Large or complex components
+* Duplicate logic
+
+6. Architecture & Scalability
+
+* Tight coupling
+* Poor separation of concerns
+* Non-reusable patterns
+
+7. Edge Cases & Error Handling
+
+* Missing loading/error states
+* Undefined/null risks
+
+Commenting Rules:
+
+* Use "critical" for bugs, security issues, or breaking problems
+* Use "warning" for performance or architectural concerns
+* Use "suggestion" for minor improvements
+* Reference the exact issue clearly
+* Suggest a fix when possible
 
 File: ${filename}
 
 Diff:
-${patch}
-`;
+${patch}`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
