@@ -4,11 +4,10 @@ module.exports = {
     schema: {
       comments: [
         {
-          line: "number",
-          severity: "critical | warning | suggestion",
-          category: "bug | performance | security | readability | architecture | best_practice",
-          text: "clear, specific, and actionable review comment",
-          suggestion: "optional: proposed fix or improvement"
+          line: 1,
+          severity: "critical",
+          category: "bug",
+          text: "clear, specific, and actionable review comment"
         }
       ]
     },
@@ -22,7 +21,8 @@ module.exports = {
     "Do NOT repeat similar comments - consolidate related issues",
     "Prioritize critical issues over suggestions",
     "If no issues found, return: { \"comments\": [] }",
-    "Include a 'suggestion' field when you can propose a specific fix",
+    "The 'line' field MUST be a single integer number (e.g., 5, not '1-3' or '1,3')",
+    "If an issue spans multiple lines, use the starting line number",
     "Focus on issues that impact production: bugs, security, performance, maintainability"
   ],
 

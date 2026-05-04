@@ -1,107 +1,88 @@
 const core = require('@actions/core');
 const github = require('@actions/github');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-const { buildReviewPrompt } = require('./reviewPrompt');
+const { validateEnvironment } = require('./utils/validators');
+const { CONFIG } = require('./utils/constants');
+const { initializeModel } = require('./controllers/modelController');
+const { getOctokit, getPRFiles, extractPRInfo, postReviewComments } = require('./controllers/githubController');
+const { reviewCode } = require('./controllers/reviewController');
 
-async function run() {
+/**
+ * Main entry point for PR review
+ */
+const run = async () => {
   try {
-    // Inputs from GitHub Action
+    // Get environment variables
     const token = process.env.INPUT_GITHUB_TOKEN;
     const aiKey = process.env.INPUT_AI_API_KEY;
-    const modelName = process.env.INPUT_MODEL || 'gemini-1.5-flash';
-    const maxFiles = parseInt(process.env.INPUT_MAX_FILES) || 10;
+    const modelName = process.env.INPUT_MODEL || CONFIG.DEFAULT_MODEL;
+    const maxFilesInput = process.env.INPUT_MAX_FILES || CONFIG.DEFAULT_MAX_FILES;
 
-    // Validate inputs
-    if (!token) {
-      throw new Error('github-token is required');
-    }
-    if (!aiKey) {
-      throw new Error('gemini-api-key is required');
-    }
+    // Validate environment
+    const maxFiles = validateEnvironment(token, aiKey, maxFilesInput);
 
     core.info(`Using model: ${modelName}, max files: ${maxFiles}`);
 
-    const octokit = github.getOctokit(token);
-
-    // Gemini setup
-    const genAI = new GoogleGenerativeAI(aiKey);
-    const model = genAI.getGenerativeModel({ model: modelName });
-
+    // Initialize clients
+    const octokit = getOctokit(token);
+    const model = initializeModel(aiKey, modelName);
     const { context } = github;
 
+    // Check if this is a PR event
     if (context.eventName !== 'pull_request') {
       core.info('Not a pull request event, skipping');
       return;
     }
 
-    const pr = context.payload.pull_request;
-    const owner = context.repo.owner;
-    const repo = context.repo.repo;
-    const prNumber = pr.number;
-
+    // Extract PR information
+    const { owner, repo, prNumber } = extractPRInfo(context);
     core.info(`Reviewing PR #${prNumber}`);
 
-    const { data: files } = await octokit.rest.pulls.listFiles({
-      owner,
-      repo,
-      pull_number: prNumber,
-    });
+    // Get files to review
+    const files = await getPRFiles(octokit, owner, repo, prNumber);
+
+    if (files.length === 0) {
+      core.info(CONFIG.NO_FILES_TO_REVIEW);
+      return;
+    }
 
     if (files.length > maxFiles) {
       core.warning(`Too many files (${files.length}), reviewing only ${maxFiles}`);
     }
 
+    // Review files and post comments
+    let reviewedCount = 0;
+    let totalComments = 0;
+
     for (const file of files.slice(0, maxFiles)) {
-      if (!file.patch) continue;
+      if (!file.patch) {
+        core.debug(`Skipping ${file.filename}: no patch content`);
+        continue;
+      }
+
+      core.info(`Reviewing ${file.filename}`);
 
       const review = await reviewCode(model, file.patch, file.filename);
 
       if (review.comments && review.comments.length > 0) {
-        for (const comment of review.comments) {
-          await octokit.rest.pulls.createReview({
-            owner,
-            repo,
-            pull_number: prNumber,
-            event: 'COMMENT',
-            comments: [
-              {
-                path: file.filename,
-                line: comment.line || 1,
-                body: comment.text,
-              },
-            ],
-          });
-
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
+        const postedCount = await postReviewComments(
+          octokit,
+          owner,
+          repo,
+          prNumber,
+          file.filename,
+          review.comments
+        );
+        totalComments += postedCount;
       }
+
+      reviewedCount++;
     }
 
-    core.info('PR review completed');
+    core.info(`PR review completed: ${reviewedCount} files reviewed, ${totalComments} comments posted`);
   } catch (error) {
     core.setFailed(error.message);
   }
-}
+};
 
-async function reviewCode(model, patch, filename) {
-  try {
-    const prompt = buildReviewPrompt(filename, patch);
-
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    let text = response.text();
-
-    // Clean possible markdown wrappers
-    text = text
-      .replace(/```json/g, '')
-      .replace(/```/g, '')
-      .trim();
-
-    return JSON.parse(text);
-  } catch (error) {
-    core.warning(`Failed to review code: ${error.message}`);
-    return { comments: [] };
-  }
-}
-
+// Execute
 run();
