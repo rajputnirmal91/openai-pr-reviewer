@@ -23,7 +23,11 @@ module.exports = {
     "If no issues found, return: { \"comments\": [] }",
     "The 'line' field MUST be a single integer number (e.g., 5, not '1-3' or '1,3')",
     "If an issue spans multiple lines, use the starting line number",
-    "Focus on issues that impact production: bugs, security, performance, maintainability"
+    "The 'text' field should be clear, specific, and actionable WITHOUT including severity prefix",
+    "Do NOT include [CRITICAL], [WARNING], or [SUGGESTION] in the text field",
+    "Focus on issues that impact production: bugs, security, performance, maintainability",
+    "Maximum 3-5 comments per file to avoid review fatigue",
+    "Only flag issues that would cause problems in production or significantly impact code quality"
   ],
 
   reviewGuidelines: {
@@ -32,7 +36,8 @@ module.exports = {
       "Null/undefined risks, off-by-one errors, race conditions, type mismatches",
       "Missing error handling, uncaught exceptions, unhandled promise rejections",
       "Edge cases not covered (empty arrays, null values, boundary conditions)",
-      "Incorrect API usage or library misuse"
+      "Incorrect API usage or library misuse",
+      "Uninitialized variables or implicit global declarations"
     ],
 
     performance: [
@@ -90,13 +95,19 @@ module.exports = {
     warning: "Performance issues, architectural concerns, maintainability problems, potential bugs",
     suggestion: "Minor improvements, code style, documentation, nice-to-haves",
     guidelines: [
-      "Reference the exact issue clearly with context",
-      "Suggest a specific fix when possible (include code snippet if helpful)",
-      "Explain the impact: why this matters for production",
-      "Avoid nitpicking style issues unless they impact readability",
-      "Consider the context: is this a library, API, frontend, or backend code?",
-      "Flag missing tests or test coverage gaps",
-      "Highlight potential future maintenance issues"
+      "Be specific: Reference exact line numbers, variable names, or function names",
+      "Be constructive: Suggest a specific fix or improvement when possible",
+      "Be concise: Keep comments focused and avoid unnecessary verbosity",
+      "Explain impact: Why this matters for production, performance, or maintainability",
+      "Avoid nitpicking: Focus on issues that significantly impact code quality",
+      "Consider context: Is this a library, API, frontend, or backend code?",
+      "Flag gaps: Missing tests, error handling, or edge case coverage",
+      "Highlight risks: Potential future maintenance issues or technical debt",
+      "Write text field as a clear, actionable comment WITHOUT severity prefix",
+      "Format: Start with the issue, explain why it matters, suggest a fix",
+      "Example GOOD: 'Variables A, B, and C are implicitly declared as global variables. This causes scope pollution and breaks in strict mode. Use const or let to declare them explicitly.'",
+      "Example BAD: 'Bad variable declaration' or 'Fix this' (too vague)"
     ]
   }
 };
+

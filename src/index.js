@@ -52,6 +52,7 @@ const run = async () => {
     // Review files and post comments
     let reviewedCount = 0;
     let totalComments = 0;
+    let skippedComments = 0;
 
     for (const file of files.slice(0, maxFiles)) {
       if (!file.patch) {
@@ -64,7 +65,7 @@ const run = async () => {
       const review = await reviewCode(model, file.patch, file.filename);
 
       if (review.comments && review.comments.length > 0) {
-        const postedCount = await postReviewComments(
+        const result = await postReviewComments(
           octokit,
           owner,
           repo,
@@ -72,13 +73,14 @@ const run = async () => {
           file.filename,
           review.comments
         );
-        totalComments += postedCount;
+        totalComments += result.postedCount;
+        skippedComments += result.skippedCount;
       }
 
       reviewedCount++;
     }
 
-    core.info(`PR review completed: ${reviewedCount} files reviewed, ${totalComments} comments posted`);
+    core.info(`PR review completed: ${reviewedCount} files reviewed, ${totalComments} comments posted${skippedComments > 0 ? `, ${skippedComments} skipped (not in diff)` : ''}`);
   } catch (error) {
     core.setFailed(error.message);
   }
