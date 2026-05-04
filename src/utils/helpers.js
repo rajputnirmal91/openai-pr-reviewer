@@ -1,4 +1,5 @@
 const core = require('@actions/core');
+const { repair } = require('jsonrepair');
 const { CONFIG } = require('./constants');
 
 /**
@@ -39,23 +40,46 @@ const extractLineNumber = (value) => {
 };
 
 /**
- * Clean markdown wrappers from JSON response
+ * Clean markdown wrappers and fix common JSON issues from model response
  */
 const cleanJsonResponse = (text) => {
-  return text
+  let cleaned = text
     .replace(/```json/g, '')
     .replace(/```/g, '')
     .trim();
+
+  // Remove any leading/trailing text before first { and after last }
+  const jsonStart = cleaned.indexOf('{');
+  const jsonEnd = cleaned.lastIndexOf('}');
+  
+  if (jsonStart !== -1 && jsonEnd !== -1 && jsonStart < jsonEnd) {
+    cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
+  }
+
+  // Fix trailing commas before closing brackets/braces
+  cleaned = cleaned.replace(/,(\s*[}\]])/g, '$1');
+
+  // Remove comments (// and /* */ style)
+  cleaned = cleaned.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '');
+
+  return cleaned.trim();
 };
 
 /**
- * Validate and parse JSON safely
+ * Validate and parse JSON safely using jsonrepair
  */
 const parseJsonSafely = (text) => {
   try {
+    // First try standard JSON parse
     return JSON.parse(text);
   } catch (error) {
-    throw new Error(`Invalid JSON: ${error.message}`);
+    try {
+      // If that fails, use jsonrepair to fix common issues
+      const repaired = repair(text);
+      return JSON.parse(repaired);
+    } catch (repairError) {
+      throw new Error(`Invalid JSON: ${error.message}`);
+    }
   }
 };
 
