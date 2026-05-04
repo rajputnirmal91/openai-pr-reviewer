@@ -1,113 +1,43 @@
 module.exports = {
   responseFormat: {
-    description: "Strict JSON format for code review responses",
-    schema: {
-      comments: [
-        {
-          line: 1,
-          severity: "critical",
-          category: "bug",
-          text: "clear, specific, and actionable review comment"
-        }
-      ]
-    },
+    schema: { comments: [{ line: 1, severity: "critical|warning|suggestion", category: "bug|performance|security|maintainability|architecture", text: "actionable comment" }] },
     emptyResponse: { comments: [] }
   },
 
-  rules: [
-    "ONLY return valid JSON (no markdown, no explanations outside JSON)",
-    "Do NOT include any text before or after JSON",
-    "Each comment must be precise, actionable, and reference the exact issue",
-    "Do NOT repeat similar comments - consolidate related issues",
-    "Prioritize critical issues over suggestions",
-    "If no issues found, return: { \"comments\": [] }",
-    "The 'line' field MUST be a single integer number (e.g., 5, not '1-3' or '1,3')",
-    "If an issue spans multiple lines, use the starting line number",
-    "The 'text' field should be clear, specific, and actionable WITHOUT including severity prefix",
-    "Do NOT include [CRITICAL], [WARNING], or [SUGGESTION] in the text field",
-    "Focus on issues that impact production: bugs, security, performance, maintainability",
-    "Maximum 3-5 comments per file to avoid review fatigue",
-    "Only flag issues that would cause problems in production or significantly impact code quality"
-  ],
-
-  reviewGuidelines: {
-    bugsAndLogicErrors: [
-      "Incorrect logic, broken conditions, missing dependencies",
-      "Null/undefined risks, off-by-one errors, race conditions, type mismatches",
-      "Missing error handling, uncaught exceptions, unhandled promise rejections",
-      "Edge cases not covered (empty arrays, null values, boundary conditions)",
-      "Incorrect API usage or library misuse",
-      "Uninitialized variables or implicit global declarations"
+  // Split rules by file type so only relevant ones are sent
+  guidelines: {
+    common: [
+      // Bugs
+      "Flag broken logic, null/undefined risks, off-by-one errors, race conditions, type mismatches",
+      "Flag missing error handling, uncaught exceptions, unhandled promise rejections",
+      "Flag edge cases not covered (empty arrays, null values, boundary conditions)",
+      // Security
+      "Flag XSS risks (dangerouslySetInnerHTML, eval, innerHTML with user input)",
+      "Flag exposed secrets, API keys, tokens, or PII in logs/comments",
+      "Flag injection vulnerabilities (SQL, command, template injection)",
+      "Flag missing input validation or sanitization",
+      // Performance
+      "Flag N+1 queries, unnecessary API calls, memory leaks, blocking main thread ops",
+      // Maintainability
+      "Flag dead code, magic numbers, functions >200 lines, DRY violations",
+      "Flag poor naming (single letters, unclear abbreviations)"
     ],
-
-    performance: [
-      "Expensive computations inside render/hot paths",
-      "Missing memoization (useMemo, useCallback, React.memo) where needed",
-      "Inefficient rendering patterns (re-renders on every parent update)",
-      "N+1 queries, unnecessary API calls, missing pagination",
-      "Memory leaks (event listeners not cleaned up, subscriptions not unsubscribed)",
-      "Blocking operations on main thread, synchronous I/O",
-      "Large bundle sizes, unused dependencies"
+    react: [
+      "Flag missing list keys, inline object/function creation causing re-renders",
+      "Flag hook misuse (missing deps array, hooks in conditionals)",
+      "Flag prop drilling, missing loading/error states, setState in render",
+      "Flag missing memoization (useMemo, useCallback) in hot paths"
     ],
-
-    security: [
-      "XSS risks (dangerouslySetInnerHTML, eval, innerHTML with user input)",
-      "Exposure of sensitive data (API keys, tokens, PII in logs/comments)",
-      "Unsafe API usage (no HTTPS, missing CORS validation)",
-      "Injection vulnerabilities (SQL, command, template injection)",
-      "Missing input validation or sanitization",
-      "Insecure authentication/authorization patterns",
-      "Secrets hardcoded in source code"
-    ],
-
-    readabilityAndMaintainability: [
-      "Poor naming conventions (single letters, unclear abbreviations)",
-      "Large or complex functions/components (>200 lines, too many responsibilities)",
-      "Duplicate logic, DRY violations, copy-paste code",
-      "Missing or unclear documentation, no JSDoc comments",
-      "Magic numbers/strings without explanation",
-      "Inconsistent code style or formatting",
-      "Dead code or unused variables"
-    ],
-
-    architectureAndScalability: [
-      "Tight coupling between modules, hard to test",
-      "Poor separation of concerns (business logic mixed with UI)",
-      "Non-reusable patterns, monolithic components",
-      "Scalability issues (linear complexity where exponential expected)",
-      "Missing abstraction layers",
-      "Circular dependencies"
-    ],
-
-    reactBestPractices: [
-      "Unnecessary re-renders (missing keys, inline object/function creation)",
-      "Missing keys in lists (causes state bugs when list reorders)",
-      "Improper state management (state in wrong component, prop drilling)",
-      "React hook misuse (useEffect without dependencies, hooks in conditionals)",
-      "Anti-patterns (setState in render, direct DOM manipulation)",
-      "Missing loading/error states",
-      "Prop drilling instead of context/state management"
+    backend: [
+      "Flag synchronous I/O, missing pagination, insecure auth patterns",
+      "Flag unsafe API usage (no HTTPS, missing CORS), hardcoded secrets",
+      "Flag tight coupling, circular dependencies, missing abstraction layers"
     ]
   },
 
-  commentingRules: {
-    critical: "Production-breaking bugs, security vulnerabilities, data loss risks, crashes, unhandled errors",
-    warning: "Performance issues, architectural concerns, maintainability problems, potential bugs",
-    suggestion: "Minor improvements, code style, documentation, nice-to-haves",
-    guidelines: [
-      "Be specific: Reference exact line numbers, variable names, or function names",
-      "Be constructive: Suggest a specific fix or improvement when possible",
-      "Be concise: Keep comments focused and avoid unnecessary verbosity",
-      "Explain impact: Why this matters for production, performance, or maintainability",
-      "Avoid nitpicking: Focus on issues that significantly impact code quality",
-      "Consider context: Is this a library, API, frontend, or backend code?",
-      "Flag gaps: Missing tests, error handling, or edge case coverage",
-      "Highlight risks: Potential future maintenance issues or technical debt",
-      "Write text field as a clear, actionable comment WITHOUT severity prefix",
-      "Format: Start with the issue, explain why it matters, suggest a fix",
-      "Example GOOD: 'Variables A, B, and C are implicitly declared as global variables. This causes scope pollution and breaks in strict mode. Use const or let to declare them explicitly.'",
-      "Example BAD: 'Bad variable declaration' or 'Fix this' (too vague)"
-    ]
+  severityDefs: {
+    critical: "Production-breaking bugs, security vulnerabilities, data loss, crashes",
+    warning: "Performance issues, architectural concerns, potential bugs",
+    suggestion: "Minor improvements, style, documentation"
   }
 };
-
