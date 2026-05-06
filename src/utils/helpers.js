@@ -9,6 +9,7 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
  * Retry function with exponential backoff
+ * Handles 503 Service Unavailable errors with longer delays
  */
 const retryWithBackoff = async (fn, retries = CONFIG.MAX_RETRIES) => {
   for (let i = 0; i < retries; i++) {
@@ -16,7 +17,13 @@ const retryWithBackoff = async (fn, retries = CONFIG.MAX_RETRIES) => {
       return await fn();
     } catch (error) {
       if (i === retries - 1) throw error;
-      const delay = CONFIG.RETRY_DELAY_MS * Math.pow(2, i);
+      
+      // Check if it's a 503 Service Unavailable error
+      const is503 = error.message?.includes('503') || error.message?.includes('Service Unavailable');
+      const delay = is503 
+        ? CONFIG.RETRY_DELAY_MS * Math.pow(2, i) * 2  // Double delay for 503 errors
+        : CONFIG.RETRY_DELAY_MS * Math.pow(2, i);
+      
       core.warning(`Attempt ${i + 1} failed, retrying in ${delay}ms: ${error.message}`);
       await sleep(delay);
     }

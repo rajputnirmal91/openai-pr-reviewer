@@ -2,8 +2,8 @@ const VALID_SEVERITIES = ['critical', 'warning', 'suggestion'];
 const VALID_CATEGORIES = ['bug', 'performance', 'security', 'readability', 'architecture', 'best_practice'];
 
 const CONFIG = {
-  MAX_RETRIES: 3,
-  RETRY_DELAY_MS: 1000,
+  MAX_RETRIES: 5,
+  RETRY_DELAY_MS: 2000,
   COMMENT_DELAY_MS: 500,
   MAX_COMMENT_LENGTH: 500,
   DEFAULT_MODEL: 'gemini-1.5-flash',
