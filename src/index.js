@@ -14,7 +14,7 @@ const run = async () => {
     // Get environment variables
     const token = process.env.INPUT_GITHUB_TOKEN;
     const aiKey = process.env.INPUT_AI_API_KEY;
-    const modelName = CONFIG.DEFAULT_MODEL || process.env.INPUT_MODEL;
+    const modelName = process.env.INPUT_MODEL || CONFIG.DEFAULT_MODEL;
     const maxFilesInput = process.env.INPUT_MAX_FILES || CONFIG.DEFAULT_MAX_FILES;
 
     // Validate environment

@@ -6,7 +6,7 @@ const CONFIG = {
   RETRY_DELAY_MS: 2000,
   COMMENT_DELAY_MS: 500,
   MAX_COMMENT_LENGTH: 500,
-  DEFAULT_MODEL: 'gemini-1.5-pro',
+  DEFAULT_MODEL: 'gemini-1.5-flash',
   DEFAULT_MAX_FILES: 10,
 };
 
