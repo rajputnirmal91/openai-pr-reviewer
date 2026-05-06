@@ -7,7 +7,7 @@ inputs:
     required: true
   ai-api-key:
     description: 'Ollama API key'
-    required: true
+    required: false
   ollama-url:
     description: 'Ollama server URL'
     required: false
