@@ -1,17 +1,21 @@
-name: 'OpenAI PR Reviewer'
-description: 'Review PRs with OpenAI and comment inline'
+name: 'Ollama PR Reviewer'
+description: 'Review PRs with Ollama and comment inline'
 author: 'Nirmal Rajput'
 inputs:
   github-token:
     description: 'GitHub token for API access'
     required: true
   ai-api-key:
-    description: 'AI API key'
+    description: 'Ollama API key'
     required: true
-  model:
-    description: 'OpenAI model to use'
+  ollama-url:
+    description: 'Ollama server URL'
     required: false
-    default: 'gemini-2.5-flash'
+    default: 'https://ollama.jaihindji.in/'
+  model:
+    description: 'Ollama model to use'
+    required: false
+    default: 'gpt-oss:20b-cloud'
   max-files:
     description: 'Maximum files to review'
     required: false
@@ -28,6 +32,7 @@ runs:
       env:
         INPUT_GITHUB_TOKEN: ${{ inputs.github-token }}
         INPUT_AI_API_KEY: ${{ inputs.ai-api-key }}
+        INPUT_OLLAMA_URL: ${{ inputs.ollama-url }}
         INPUT_MODEL: ${{ inputs.model }}
         INPUT_MAX_FILES: ${{ inputs.max-files }}
 branding:

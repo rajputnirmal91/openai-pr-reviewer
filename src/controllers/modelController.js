@@ -1,22 +1,37 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-const { CONFIG, GENERATION_CONFIG, SAFETY_SETTINGS } = require('../utils/constants');
+const axios = require('axios');
+const { CONFIG, GENERATION_CONFIG } = require('../utils/constants');
 
 /**
- * Initialize Gemini AI model with optimized settings
- * @param {string} apiKey - Google API key
- * @param {string} modelName - Model name (default: gemini-1.5-flash)
- * @returns {object} Configured generative model
+ * Initialize Ollama AI model
+ * @param {string} apiKey - Ollama API key
+ * @param {string} modelName - Model name (default: gpt-oss:20b-cloud)
+ * @param {string} ollamaUrl - Ollama server URL
+ * @returns {object} Configured Ollama client
  */
-const initializeModel = (apiKey, modelName = CONFIG.DEFAULT_MODEL) => {
-  const genAI = new GoogleGenerativeAI(apiKey);
-  
-  const model = genAI.getGenerativeModel({
-    model: modelName,
-    generationConfig: GENERATION_CONFIG,
-    safetySettings: SAFETY_SETTINGS,
-  });
+const initializeModel = (apiKey, modelName = CONFIG.DEFAULT_MODEL, ollamaUrl = CONFIG.OLLAMA_URL) => {
+  return {
+    apiKey,
+    modelName,
+    ollamaUrl,
+    generateContent: async (prompt) => {
+      const response = await axios.post(`${ollamaUrl}api/generate`, {
+        model: modelName,
+        prompt: prompt,
+        stream: false,
+      }, {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
-  return model;
+      return {
+        response: {
+          text: () => response.data.response,
+        },
+      };
+    },
+  };
 };
 
 /**
@@ -26,7 +41,6 @@ const initializeModel = (apiKey, modelName = CONFIG.DEFAULT_MODEL) => {
 const getModelConfig = () => {
   return {
     generationConfig: GENERATION_CONFIG,
-    safetySettings: SAFETY_SETTINGS,
     description: {
       temperature: 'Controls randomness (0-2). Lower = deterministic, Higher = creative',
       maxOutputTokens: 'Maximum tokens in response (~4 chars per token)',

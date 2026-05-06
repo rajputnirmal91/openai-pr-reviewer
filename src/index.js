@@ -15,16 +15,17 @@ const run = async () => {
     const token = process.env.INPUT_GITHUB_TOKEN;
     const aiKey = process.env.INPUT_AI_API_KEY;
     const modelName = process.env.INPUT_MODEL || CONFIG.DEFAULT_MODEL;
+    const ollamaUrl = process.env.INPUT_OLLAMA_URL || CONFIG.OLLAMA_URL;
     const maxFilesInput = process.env.INPUT_MAX_FILES || CONFIG.DEFAULT_MAX_FILES;
 
     // Validate environment
     const maxFiles = validateEnvironment(token, aiKey, maxFilesInput);
 
-    core.info(`Using model: ${modelName}, max files: ${maxFiles}`);
+    core.info(`Using Ollama model: ${modelName}, URL: ${ollamaUrl}, max files: ${maxFiles}`);
 
     // Initialize clients
     const octokit = getOctokit(token);
-    const model = initializeModel(aiKey, modelName);
+    const model = initializeModel(aiKey, modelName, ollamaUrl);
     const { context } = github;
 
     // Check if this is a PR event
