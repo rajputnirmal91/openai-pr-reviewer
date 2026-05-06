@@ -8,6 +8,7 @@ inputs:
   ai-api-key:
     description: 'Ollama API key'
     required: false
+    default: 'abcdefgh'
   ollama-url:
     description: 'Ollama server URL'
     required: false
