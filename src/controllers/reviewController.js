@@ -34,7 +34,12 @@ const reviewCode = async (model, patch, filename) => {
 
     return { comments: normalizedComments };
   } catch (error) {
-    core.warning(`Failed to review ${filename}: ${error.message}`);
+    const is503 = error.message?.includes('503') || error.message?.includes('Service Unavailable');
+    if (is503) {
+      core.warning(`API temporarily unavailable for ${filename}. Skipping review.`);
+    } else {
+      core.warning(`Failed to review ${filename}: ${error.message}`);
+    }
     return { comments: [] };
   }
 };
