@@ -1,50 +1,42 @@
-const reviewRules = require('./reviewRules');
+const { guidelines, severityDefs, responseFormat } = require('./reviewRules');
+
+// Detect file type from filename to send only relevant guidelines
+function detectFileType(filename) {
+  if (/\.(jsx?|tsx?)$/.test(filename)) {
+    return filename.match(/\.(jsx|tsx)$/) || filename.includes('component') || filename.includes('Component')
+      ? 'react'
+      : 'js';
+  }
+  return 'backend';
+}
 
 function buildReviewPrompt(filename, patch) {
-  const { responseFormat, rules, reviewGuidelines, commentingRules } = reviewRules;
+  const fileType = detectFileType(filename);
 
-  return `You are a senior full-stack engineer performing a strict production-level code review.
+  // Only include React or backend guidelines when relevant
+  const relevantGuidelines = [
+    ...guidelines.common,
+    ...(fileType === 'react' ? guidelines.react : guidelines.backend)
+  ];
 
-CONTEXT:
-- File: ${filename}
-- Review Type: Git diff analysis
-- Goal: Identify bugs, security issues, performance problems, and maintainability concerns
+  // Compact format — avoids verbose section headers
+  return `You are a senior engineer doing a strict production code review.
+Return ONLY valid JSON, no markdown, no extra text.
+Schema: ${JSON.stringify(responseFormat.schema)}
+If no issues: ${JSON.stringify(responseFormat.emptyResponse)}
 
-RESPONSE FORMAT (STRICT JSON ONLY):
-${JSON.stringify(responseFormat.schema, null, 2)}
+Severity: critical=${severityDefs.critical} | warning=${severityDefs.warning} | suggestion=${severityDefs.suggestion}
 
-RULES:
-${rules.map(rule => `- ${rule}`).join('\n')}
+Rules (apply all):
+${relevantGuidelines.map((g, i) => `${i + 1}. ${g}`).join('\n')}
 
-REVIEW GUIDELINES:
+Additional rules:
+- Consolidate related issues into one comment
+- Use starting line number if issue spans multiple lines
+- Only flag issues that impact production
 
-Bugs & Logic Errors:
-${reviewGuidelines.bugsAndLogicErrors.map(item => `- ${item}`).join('\n')}
-
-Performance:
-${reviewGuidelines.performance.map(item => `- ${item}`).join('\n')}
-
-Security:
-${reviewGuidelines.security.map(item => `- ${item}`).join('\n')}
-
-Readability & Maintainability:
-${reviewGuidelines.readabilityAndMaintainability.map(item => `- ${item}`).join('\n')}
-
-Architecture & Scalability:
-${reviewGuidelines.architectureAndScalability.map(item => `- ${item}`).join('\n')}
-
-React Best Practices (if applicable):
-${reviewGuidelines.reactBestPractices.map(item => `- ${item}`).join('\n')}
-
-SEVERITY LEVELS:
-- critical: ${commentingRules.critical}
-- warning: ${commentingRules.warning}
-- suggestion: ${commentingRules.suggestion}
-
-COMMENTING GUIDELINES:
-${commentingRules.guidelines.map(guideline => `- ${guideline}`).join('\n')}
-
-DIFF TO REVIEW:
+File: ${filename}
+Diff:
 ${patch}`;
 }
 
