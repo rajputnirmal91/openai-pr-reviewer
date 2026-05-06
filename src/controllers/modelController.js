@@ -20,7 +20,6 @@ const initializeModel = (apiKey, modelName = CONFIG.DEFAULT_MODEL, ollamaUrl = C
         stream: false,
       }, {
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
       });
