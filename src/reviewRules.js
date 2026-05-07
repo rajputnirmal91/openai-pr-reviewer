@@ -27,7 +27,15 @@ module.exports = {
     "Do NOT include [CRITICAL], [WARNING], or [SUGGESTION] in the text field",
     "Focus on issues that impact production: bugs, security, performance, maintainability",
     "Maximum 3-5 comments per file to avoid review fatigue",
-    "Only flag issues that would cause problems in production or significantly impact code quality"
+    "Only flag issues that would cause problems in production or significantly impact code quality",
+    "AVOID generic statements like 'ensure', 'make sure', 'consider', 'should'. Be specific about WHAT is wrong and WHY",
+    "Do NOT suggest obvious best practices that are already being followed in the code",
+    "Only comment on actual problems found in the diff, not on what could theoretically go wrong",
+    "If the code already handles edge cases, error handling, or validation, do NOT suggest adding them again",
+    "CRITICAL: When flagging removed functions/variables, ONLY comment if you can see they are actually used in the diff",
+    "Do NOT suggest checking for references elsewhere - you cannot see the entire codebase, only this diff",
+    "If a function is removed but you cannot see it being called in the diff, do NOT flag it as a problem",
+    "Only flag actual ReferenceErrors if the removed code is clearly called in the visible diff"
   ],
 
   reviewGuidelines: {
@@ -101,12 +109,16 @@ module.exports = {
       "Explain impact: Why this matters for production, performance, or maintainability",
       "Avoid nitpicking: Focus on issues that significantly impact code quality",
       "Consider context: Is this a library, API, frontend, or backend code?",
-      "Flag gaps: Missing tests, error handling, or edge case coverage",
+      "Flag gaps: Missing tests, error handling, or edge case coverage ONLY if not already present",
       "Highlight risks: Potential future maintenance issues or technical debt",
       "Write text field as a clear, actionable comment WITHOUT severity prefix",
       "Format: Start with the issue, explain why it matters, suggest a fix",
       "Example GOOD: 'Variables A, B, and C are implicitly declared as global variables. This causes scope pollution and breaks in strict mode. Use const or let to declare them explicitly.'",
-      "Example BAD: 'Bad variable declaration' or 'Fix this' (too vague)"
+      "Example BAD: 'Bad variable declaration' or 'Fix this' (too vague)",
+      "Example BAD: 'Ensure proper error handling' (too generic - only flag if error handling is actually missing)",
+      "Example BAD: 'Make sure to validate input' (too generic - only flag if validation is actually missing)",
+      "NEVER suggest adding something that is already present in the code",
+      "NEVER use vague language like 'ensure', 'make sure', 'consider', 'should' - be specific about what is wrong"
     ]
   }
 };
