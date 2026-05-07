@@ -1,16 +1,7 @@
 module.exports = {
   responseFormat: {
     description: "Strict JSON format for code review responses",
-    schema: {
-      comments: [
-        {
-          line: 1,
-          severity: "critical",
-          category: "bug",
-          text: "clear, specific, and actionable review comment"
-        }
-      ]
-    },
+    schema: { comments: [{ line: 1, severity: "critical|warning|suggestion", category: "bug|performance|security|maintainability", text: "clear, specific, and actionable review comment" }] },
     emptyResponse: { comments: [] }
   },
 
