@@ -1,6 +1,6 @@
 const core = require('@actions/core');
 const github = require('@actions/github');
-const { validateEnvironment } = require('./utils/validators');
+const { validateEnvironment, isSupportedFileType } = require('./utils/validators');
 const { CONFIG } = require('./utils/constants');
 const { initializeModel } = require('./controllers/modelController');
 const { getOctokit, getPRFiles, extractPRInfo, postReviewComments } = require('./controllers/githubController');
@@ -46,8 +46,16 @@ const run = async () => {
       return;
     }
 
-    if (files.length > maxFiles) {
-      core.warning(`Too many files (${files.length}), reviewing only ${maxFiles}`);
+    // Filter to supported file types
+    const supportedFiles = files.filter(file => isSupportedFileType(file.filename));
+    
+    if (supportedFiles.length === 0) {
+      core.info('No supported file types found in PR');
+      return;
+    }
+
+    if (supportedFiles.length > maxFiles) {
+      core.warning(`Too many files (${supportedFiles.length}), reviewing only ${maxFiles}`);
     }
 
     // Review files and post comments
@@ -55,7 +63,7 @@ const run = async () => {
     let totalComments = 0;
     let skippedComments = 0;
 
-    for (const file of files.slice(0, maxFiles)) {
+    for (const file of supportedFiles.slice(0, maxFiles)) {
       if (!file.patch) {
         core.debug(`Skipping ${file.filename}: no patch content`);
         continue;

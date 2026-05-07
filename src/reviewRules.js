@@ -95,6 +95,18 @@ module.exports = {
       "Anti-patterns (setState in render, direct DOM manipulation)",
       "Missing loading/error states",
       "Prop drilling instead of context/state management"
+    ],
+
+    cssAndStyling: [
+      "Unused CSS rules or selectors",
+      "Overly specific selectors causing maintainability issues",
+      "Missing vendor prefixes for browser compatibility",
+      "Performance issues (expensive selectors, too many media queries)",
+      "Accessibility issues (insufficient color contrast, missing focus states)",
+      "Hardcoded colors/values instead of using variables/tokens",
+      "Duplicate styles that should be consolidated",
+      "Improper use of !important (should be avoided)",
+      "Missing responsive design considerations"
     ]
   },
 

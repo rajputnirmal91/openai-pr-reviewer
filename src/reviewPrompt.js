@@ -36,6 +36,9 @@ ${reviewGuidelines.architectureAndScalability.map(item => `- ${item}`).join('\n'
 React Best Practices (if applicable):
 ${reviewGuidelines.reactBestPractices.map(item => `- ${item}`).join('\n')}
 
+CSS & Styling (if applicable):
+${reviewGuidelines.cssAndStyling.map(item => `- ${item}`).join('\n')}
+
 SEVERITY LEVELS:
 - critical: ${commentingRules.critical}
 - warning: ${commentingRules.warning}

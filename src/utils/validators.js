@@ -75,6 +75,21 @@ const isValidSeverity = (severity) => VALID_SEVERITIES.includes(severity);
  */
 const isValidCategory = (category) => VALID_CATEGORIES.includes(category);
 
+/**
+ * Check if file should be reviewed based on extension
+ */
+const isSupportedFileType = (filename) => {
+  const supportedExtensions = [
+    '.js', '.jsx', '.ts', '.tsx',  // JavaScript/TypeScript
+    '.css', '.scss', '.sass', '.less',  // Stylesheets
+    '.html', '.htm',  // HTML
+    '.vue', '.svelte',  // Other frameworks
+  ];
+  
+  const ext = filename.toLowerCase().substring(filename.lastIndexOf('.'));
+  return supportedExtensions.includes(ext);
+};
+
 module.exports = {
   validateEnvironment,
   validatePRContext,
@@ -83,4 +98,5 @@ module.exports = {
   isValidComment,
   isValidSeverity,
   isValidCategory,
+  isSupportedFileType,
 };
